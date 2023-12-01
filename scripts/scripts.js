@@ -11,6 +11,7 @@ import {
   waitForLCP,
   loadBlocks,
   loadCSS,
+  loadScript,
 } from './aem.js';
 
 const LCP_BLOCKS = []; // add your LCP blocks to the list
@@ -127,6 +128,7 @@ function loadDelayed() {
 }
 
 async function loadPage() {
+  await loadScript('/scripts/at.js');
   await loadEager(document);
   await loadLazy(document);
   loadDelayed();
