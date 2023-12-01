@@ -128,7 +128,10 @@ function loadDelayed() {
 }
 
 async function loadPage() {
-  window.targetGlobalSettings = window.targetGlobalSettings || {};
+  window.targetGlobalSettings = {
+    pageLoadEnabled: true,
+  };
+  
   if (window.location.hostname.match(/\.hlx(\.page|\.live)/)) {
     targetGlobalSettings.cookieDomain = window.location.hostname;
   }
