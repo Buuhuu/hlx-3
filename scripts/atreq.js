@@ -46,8 +46,12 @@ if (!qaMode) {
   qaMode = window.sessionStorage.getItem('at_qamode');
   if (qaMode) {
     qaMode = JSON.parse(qaMode);
-    if (qaMode.expires < now) qaMode = undefined;
-    else delete qaMode.expires;
+    if (qaMode.expires < now){
+      qaMode = undefined;
+      window.sessionStorage.removeItem('at_qamode');
+    } else {
+      delete qaMode.expires;
+    }
   }
 }
 if (qaMode) {
