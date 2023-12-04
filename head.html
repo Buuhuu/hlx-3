@@ -1,4 +1,42 @@
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <script src="/scripts/aem.js" type="module"></script>
 <script src="/scripts/scripts.js" type="module"></script>
-<link rel="stylesheet" href="/styles/styles.css"/>
+<link rel="stylesheet" href="/styles/styles.css" />
+<script>
+  const { hostname, href } = window.location;
+  const isLocalhost = hostname.match(/(localhost|127.0.0.1)(:\d+)?/);
+  const endpoint = hostname.match(/\.hlx(\.page|\.live)$/) || isLocalhost
+    ? new URL('https://sitesinternal.tt.omtrdc.net/rest/v1/delivery')
+    : new URL('/_decisioning', window.location);
+  const sessionId = window.sessionStorage.getItem('at_sessionId') || crypto.randomUUID();
+  const tntId = window.localStorage.getItem('at_tntId');
+  window.sessionStorage.setItem('at_sessionId', sessionId);
+  endpoint.searchParams.append('client', 'sitesinternal');
+  endpoint.searchParams.append('sessionId', sessionId);
+  const [orientation] = screen.orientation.type.split('-');
+  const address = {
+    url: isLocalhost ? new URL(window.location.pathname, 'https://main--hlx-3--buuhuu.hlx.page') : href,
+    referringUrl: document.referrer,
+  };
+  const atreq = {
+    requestId: crypto.randomUUID(),
+    context: {
+      userAgent: navigator.userAgent,
+      channel: 'web',
+      screen: { width: screen.width, height: screen.height, orientation, colorDepth: screen.colorDepth, pixelRatio: devicePixelRatio },
+      window: { width: window.innerWidth, height: window.innerHeight },
+      browser: { host: hostname },
+      address
+    },
+    execute: { pageLoad: { address } }
+  }
+  if (tntId) {
+    atreq.id = { tntId };
+  }
+  window.atresp$ = fetch(endpoint, { method: 'POST', body: JSON.stringify(atreq) })
+    .then((resp) => resp.ok ? resp.json() : undefined)
+    .then((json) => {
+      if (json) window.localStorage.setItem('at_tntId', json.id.tntId);
+      return json;
+    });
+</script>

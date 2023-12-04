@@ -13,7 +13,7 @@ import {
   loadCSS,
 } from './aem.js';
 
-const LCP_BLOCKS = []; // add your LCP blocks to the list
+const LCP_BLOCKS = ['hero']; // add your LCP blocks to the list
 
 /**
  * Builds hero block and prepends to main in a new section.
@@ -126,8 +126,49 @@ function loadDelayed() {
   // load anything that can be postponed to the latest here
 }
 
+function applyOffers(doc, target, offers) {
+  return offers.filter((offer) => {
+    const remainingActions = offer.content.filter(({ cssSelector, content, type }) => {
+      const el = doc.querySelector(cssSelector);
+      if (target.contains(el)) {
+        if (type === 'insertBefore') {
+          el.insertAdjacentHTML('beforebegin', content);
+          return false;
+        }
+      }
+      return true;
+    });
+    offer.content = remainingActions;
+    return remainingActions.length;
+  });
+}
+
+async function loadOffers(doc) {
+  if (window.atresp$) {
+    const atresp = await window.atresp$;
+    const offers = atresp.execute.pageLoad.options.filter((offer) => offer.type === 'actions');
+    if (offers.length) {
+      let remainingOffers = offers;
+      new MutationObserver((mutations, observer) => {
+        for (let i = 0; i < mutations.length; i += 1) {
+          remainingOffers = applyOffers(doc, mutations[i].target, remainingOffers);
+          if (!remainingOffers.length) {
+            observer.disconnect();
+            return;
+          }
+        }        
+      }).observe(doc.querySelector('main'), {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-block-status', 'data-section-status']
+      });
+    }
+  }
+}
+
 async function loadPage() {
   await loadEager(document);
+  await loadOffers(document);
   await loadLazy(document);
   loadDelayed();
 }
