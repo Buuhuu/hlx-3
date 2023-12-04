@@ -656,10 +656,11 @@ async function loadFooter(footer) {
  * Load LCP block and/or wait for LCP in default content.
  * @param {Array} lcpBlocks Array of blocks
  */
-async function waitForLCP(lcpBlocks) {
+async function waitForLCP(lcpBlocks, afterLcpBlock) {
   const block = document.querySelector('.block');
   const hasLCPBlock = block && lcpBlocks.includes(block.dataset.blockName);
   if (hasLCPBlock) await loadBlock(block);
+  if (afterLcpBlock) await afterLcpBlock(hasLCPBlock ? block : document.querySelector('.section'));
 
   document.body.style.display = null;
   const lcpCandidate = document.querySelector('main img');

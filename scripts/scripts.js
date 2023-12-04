@@ -80,7 +80,10 @@ async function loadEager(doc) {
   if (main) {
     decorateMain(main);
     document.body.classList.add('appear');
-    await waitForLCP(LCP_BLOCKS);
+    await waitForLCP(LCP_BLOCKS, async (lcpBlockOrSection) => {
+      const apply = await loadOffers(doc);
+      if (apply) apply(lcpBlockOrSection);
+    });
   }
 
   try {
@@ -135,6 +138,11 @@ function applyOffers(doc, target, offers) {
           el.insertAdjacentHTML('beforebegin', content);
           return false;
         }
+        if (type === 'setHtml') {
+          el.innerHTML = content;
+          return false;
+        }
+        throw new Error('unknown type ' + type);
       }
       return true;
     });
@@ -150,7 +158,7 @@ async function loadOffers(doc) {
       const offers = atresp.execute.pageLoad.options.filter((offer) => offer.type === 'actions');
       if (offers.length) {
         let remainingOffers = offers;
-        new MutationObserver((mutations, observer) => {
+        const applyMutations = (mutations) => {
           for (let i = 0; i < mutations.length; i += 1) {
             remainingOffers = applyOffers(doc, mutations[i].target, remainingOffers);
             if (!remainingOffers.length) {
@@ -158,11 +166,15 @@ async function loadOffers(doc) {
               return;
             }
           }
-        }).observe(doc.querySelector('main'), {
+        };
+        const observer = new MutationObserver(applyMutations);
+        observer.observe(doc.querySelector('main'), {
           subtree: true,
           attributes: true,
           attributeFilter: ['data-block-status', 'data-section-status']
         });
+        
+        return (target) => applyMutations([{ target }]);
       }
     }
   }
@@ -170,7 +182,6 @@ async function loadOffers(doc) {
 
 async function loadPage() {
   await loadEager(document);
-  await loadOffers(document);
   await loadLazy(document);
   loadDelayed();
 }
