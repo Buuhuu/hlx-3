@@ -128,7 +128,7 @@ function loadDelayed() {
 
 function applyOffers(doc, target, offers) {
   return offers.filter((offer) => {
-    const remainingActions = offer.content.filter(({ cssSelector, content, type }) => {
+    const remainingActions = offer.content?.filter(({ cssSelector, content, type }) => {
       const el = doc.querySelector(cssSelector);
       if (target.contains(el)) {
         if (type === 'insertBefore') {
@@ -139,29 +139,31 @@ function applyOffers(doc, target, offers) {
       return true;
     });
     offer.content = remainingActions;
-    return remainingActions.length;
+    return remainingActions?.length;
   });
 }
 
 async function loadOffers(doc) {
   if (window.atresp$) {
     const atresp = await window.atresp$;
-    const offers = atresp.execute.pageLoad.options.filter((offer) => offer.type === 'actions');
-    if (offers.length) {
-      let remainingOffers = offers;
-      new MutationObserver((mutations, observer) => {
-        for (let i = 0; i < mutations.length; i += 1) {
-          remainingOffers = applyOffers(doc, mutations[i].target, remainingOffers);
-          if (!remainingOffers.length) {
-            observer.disconnect();
-            return;
+    if (atresp) {
+      const offers = atresp.execute.pageLoad.options.filter((offer) => offer.type === 'actions');
+      if (offers.length) {
+        let remainingOffers = offers;
+        new MutationObserver((mutations, observer) => {
+          for (let i = 0; i < mutations.length; i += 1) {
+            remainingOffers = applyOffers(doc, mutations[i].target, remainingOffers);
+            if (!remainingOffers.length) {
+              observer.disconnect();
+              return;
+            }
           }
-        }        
-      }).observe(doc.querySelector('main'), {
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-block-status', 'data-section-status']
-      });
+        }).observe(doc.querySelector('main'), {
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['data-block-status', 'data-section-status']
+        });
+      }
     }
   }
 }
