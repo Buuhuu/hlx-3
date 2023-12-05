@@ -152,6 +152,16 @@ function applyOffers(doc, target, offers) {
 }
 
 async function loadOffers(doc) {
+  if (!window.atresp$) {
+    const atreqScript = doc.querySelector('head > script[src$="/atreq.js"]');
+    if (atreqScript) {
+      await new Promise((resolve, reject) => {
+        atreqScript.onload = resolve;
+        atreqScript.onerror = reject;
+      });
+    }
+  }
+
   if (window.atresp$) {
     const atresp = await window.atresp$;
     if (atresp) {
